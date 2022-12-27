@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.navigation.fragment.findNavController
 import com.gayane.fitapp.databinding.FragmentEditStepInfoBinding
 import com.gayane.fitapp.databinding.FragmentViewStepBinding
 
@@ -27,7 +28,12 @@ class EditStepInfoFragment : Fragment() {
     }
 
     private fun bindData() {
-
+        binding.addSteps.setOnClickListener {
+            val action = EditStepInfoFragmentDirections.actionEditStepInfoFragmentToViewStepFragment(
+                binding.count.text.toString().toInt()
+            )
+            findNavController().navigate(action)
+        }
     }
 
     override fun onDestroyView() {

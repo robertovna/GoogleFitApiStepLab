@@ -9,13 +9,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import com.gayane.fitapp.databinding.FragmentViewStepBinding
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.fitness.Fitness
 import com.google.android.gms.fitness.FitnessOptions
-import com.google.android.gms.fitness.data.DataSet
-import com.google.android.gms.fitness.data.DataType
-import com.google.android.gms.fitness.data.Field
+import com.google.android.gms.fitness.data.*
 import com.google.android.gms.fitness.request.DataReadRequest
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -29,6 +28,8 @@ class ViewStepFragment : Fragment() {
     }
     private var _binding: FragmentViewStepBinding? = null
     private val binding get() = _binding!!
+
+    private val navigationArgs: ViewStepFragmentArgs by navArgs()
 
     private val fitnessOptions = FitnessOptions.builder()
         .addDataType(DataType.TYPE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
@@ -57,8 +58,46 @@ class ViewStepFragment : Fragment() {
                 account,
                 fitnessOptions)
         } else {
-            accessGoogleFit()
+            if (navigationArgs.count != 0) {
+                addSteps(navigationArgs.count)
+            }
+            else {
+                accessGoogleFit()
+            }
         }
+    }
+
+    private fun addSteps(count: Int) {
+        val dataSource = DataSource.Builder()
+            .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
+            .setType(DataSource.TYPE_RAW)
+            .setAppPackageName(requireContext())
+            .build()
+
+        val dataPoint =
+            DataPoint.builder(dataSource)
+                .setField(Field.FIELD_STEPS, count)
+                .setTimeInterval(
+                    LocalDateTime.now().atZone(ZoneId.systemDefault()).minusSeconds(30).toEpochSecond(),
+                    LocalDateTime.now().atZone(ZoneId.systemDefault()).minusSeconds(10).toEpochSecond(),
+                    TimeUnit.SECONDS,
+                )
+                .build()
+
+        val dataSet = DataSet.builder(dataSource)
+            .add(dataPoint)
+            .build()
+
+        val account = GoogleSignIn.getAccountForExtension(requireContext(), fitnessOptions)
+        Fitness.getHistoryClient(requireContext(), account)
+            .insertData(dataSet)
+            .addOnSuccessListener {
+                Log.i("gayane", "success")
+                accessGoogleFit()
+            }
+            .addOnFailureListener {
+                Log.i("gayane", "fail")
+            }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -89,10 +128,11 @@ class ViewStepFragment : Fragment() {
             .readData(readRequest)
             .addOnSuccessListener { response ->
                 var countSteps = 0
-                var lastBucket = response.buckets.last()
-                for (dataSet in lastBucket.dataSets) {
-                    for (dataPoint in dataSet.dataPoints) {
-                        countSteps += dataPoint.getValue(Field.FIELD_STEPS).toString().toInt()
+                for (bucket in response.buckets) {
+                    for (dataSet in bucket.dataSets) {
+                        for (dataPoint in dataSet.dataPoints) {
+                            countSteps += dataPoint.getValue(Field.FIELD_STEPS).toString().toInt()
+                        }
                     }
                 }
                 bindData(countSteps)
