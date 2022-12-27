@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination = "@id/ViewStepFragment">
+
+    <fragment
+        android:id="@+id/ViewStepFragment"
+        android:name="com.gayane.fitapp.ViewStepFragment"
+        android:label="View Image">
+        <action
+            android:id="@+id/action_ViewStepFragment_to_EditStepInfoFragment"
+            app:destination="@id/EditStepInfoFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/EditStepInfoFragment"
+        android:name="com.gayane.fitapp.EditStepInfoFragment"
+        android:label="Editor">
+        <action
+            android:id="@+id/action_EditStepInfoFragment_to_ViewStepFragment"
+            app:destination="@id/ViewStepFragment" />
+    </fragment>
+</navigation>
